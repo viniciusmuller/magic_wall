@@ -17,6 +17,8 @@ defmodule MyApp.Application do
   @impl true
   def start(_type, _args) do
     children = [
+      # You can spawn as many isolated circuit breakers with different configs
+      # as you want
       Supervisor.child_spec(
         {MagicWall, [
           failures_threshold: 30,
@@ -24,6 +26,7 @@ defmodule MyApp.Application do
         ]},
         id: MyApp.BillingAPICircuitBreaker
       ),
+
       Supervisor.child_spec({
         MagicWall, [
           timeout: 15,
@@ -33,7 +36,7 @@ defmodule MyApp.Application do
       )
     ]
 
-    opts = [strategy: :one_for_one, name: MyApp.Test.Supervisor]
+    opts = [strategy: :one_for_one, name: MyApp.Supervisor]
     Supervisor.start_link(children, opts)
   end
 end
@@ -42,7 +45,7 @@ end
 ## Unsupervised
 
 ```elixir
-iex> {:ok, wall} = MagicWall.start_link(MagicWall, [failures_threshold: 1])
+iex> {:ok, wall} = MagicWall.start_link([failures_threshold: 1])
 ```
 
 # Usage
