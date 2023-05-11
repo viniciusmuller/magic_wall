@@ -1,9 +1,18 @@
 defmodule MagicWall.Wall do
-  @doc """
+  @moduledoc """
   Circuit breaker implemented as a GenServer
+
+  Server options:
+    - failures_threshold: How many failures will cause the circuit to become open
+    - failures_interval: The interval, in seconds, of when the failures count will be reset
+    - successes_threshold: How many successes will cause the circuit to become closed again
+    - successes_interval: The interval, in seconds, of when the successes count will be reset
+    - timeout: The interval, in seconds, to transition from :open to :half_open state
   """
 
   defmodule State do
+    @doc false
+
     defstruct [
       :failures_threshold,
       :failures_interval,
@@ -22,6 +31,21 @@ defmodule MagicWall.Wall do
 
   # ---- Client ----
 
+  @doc """
+  Tries to perform an operation guarded by a magic wall.
+
+  ## Examples
+
+    iex> alias MagicWall.Wall
+    iex> {:ok, wall} = GenServer.start_link(Wall, [failures_threshold: 1])
+    iex> Wall.perform(wall, fn -> {:ok, :success} end)
+    {:ok, :success}
+    iex> Wall.perform(wall, fn -> {:error, :failure} end)
+    {:error, :failure}
+    iex> Wall.perform(wall, fn -> {:ok, :success} end)
+    {:error, :circuit_breaker_tripped}
+
+  """
   def perform(server, fun) do 
     GenServer.call(server, fun)
   end
